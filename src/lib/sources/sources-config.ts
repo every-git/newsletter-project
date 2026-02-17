@@ -1,7 +1,6 @@
-import type { SourceConfig } from '../../../src/lib/types';
+import type { SourceConfig } from '../types';
 
 export const SOURCES: SourceConfig[] = [
-  // Tech Core
   {
     id: 'hackernews',
     name: 'Hacker News',
@@ -58,8 +57,6 @@ export const SOURCES: SourceConfig[] = [
     feed_type: 'tech',
     interval: 'daily',
   },
-
-  // World Macro
   {
     id: 'reuters',
     name: 'Reuters',

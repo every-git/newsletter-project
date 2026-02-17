@@ -26,7 +26,7 @@ disable-model-invocation: true
 | `workers/digest/wrangler.toml` | digest D1, KV, OPENROUTER, Cron |
 | `workers/collect/index.ts` | 수집 진입점 |
 | `workers/digest/index.ts` | 다이제스트 진입점 |
-| `workers/collect/sources/sources-config.ts` | 소스 설정 (src/lib/types 참조 가능) |
+| `src/lib/sources/sources-config.ts` | 소스 설정 (workers는 src/lib/collect 사용) |
 
 ## Workflow
 

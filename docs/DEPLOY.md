@@ -69,6 +69,24 @@ Cloudflare 대시보드 **Workers & Pages** 진입 후 오른쪽 패널에서 **
 - **자동**: `main`에 `git push` 시 workflow 실행
 - **수동**: 레포 **Actions** 탭 → **Deploy to Cloudflare** → **Run workflow**
 
+## workflow 권한 오류로 푸시가 거부됐을 때
+
+`refusing to allow an OAuth App to create or update workflow ... without workflow scope` 가 나오면, 토큰에 workflow 권한을 추가한 뒤 다시 푸시하면 됩니다.
+
+**한 번에 실행 (주석 없음 — zsh 한 블록 붙여넣기 시 안전):**
+
+```bash
+cd "/Volumes/Samsung X5/Projects/newsletter-project"
+git rm -r --cached .wrangler 2>/dev/null || true
+git rm -r --cached workers/digest/.wrangler 2>/dev/null || true
+git add .gitignore
+git commit --amend --no-edit
+gh auth refresh -s workflow
+git push -u origin main
+```
+
+또는 `bash scripts/fix-push-and-clean-wrangler.sh` 실행. (이미 푸시된 레포에는 다시 실행하지 말 것.)
+
 ## 참고
 
 - **OPENROUTER_API_KEY**: digest 워커용 시크릿은 이미 `wrangler secret put`으로 Cloudflare에 저장되어 있으면, GitHub Secrets에 넣을 필요 없음. 새 환경이면 로컬에서 한 번 `cd workers/digest && npx wrangler secret put OPENROUTER_API_KEY` 실행.

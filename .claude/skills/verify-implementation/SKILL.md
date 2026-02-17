@@ -33,6 +33,8 @@ argument-hint: "[선택사항: 특정 verify 스킬 이름]"
 | 2 | `verify-frontend` | BaseLayout 사용, API 경로, Preact client 지시어 검증 |
 | 3 | `verify-workers` | collect/digest D1·KV·Cron·진입점·상위 타입 경로 검증 |
 | 4 | `verify-db` | 스키마·types.ts·db.ts 테이블/컬럼·JSON 컬럼 일치 검증 |
+| 5 | `verify-sources` | 뉴스 소스 config와 VERIFICATION.md 일치·SourceConfig·URL 형식 검증 |
+| 6 | `verify-openrouter-models` | OpenRouter MODELS 배열·:free·VERIFICATION.md 일치 검증 |
 
 ## 워크플로우
 

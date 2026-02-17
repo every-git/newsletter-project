@@ -1,0 +1,135 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { SOURCES } from '../lib/collect';
+
+const collectSources = SOURCES.filter((s) => s.type !== 'scrape');
+---
+
+<BaseLayout title="Admin - Tech Digest">
+  <div class="space-y-6">
+    <h1 class="text-xl font-bold">Admin Dashboard</h1>
+
+    <section class="rounded-lg border border-border bg-surface-alt p-4">
+      <h2 class="mb-3 font-semibold">현황</h2>
+      <div id="status" class="grid gap-2 text-sm text-text-secondary">
+        <p>로딩 중...</p>
+      </div>
+    </section>
+
+    <section class="rounded-lg border border-border bg-surface-alt p-4">
+      <h2 class="mb-3 font-semibold">수집</h2>
+      <form id="collect-form" class="space-y-3">
+        <div class="flex flex-wrap gap-3">
+          {collectSources.map((s) => (
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="source" value={s.id} checked />
+              <span>{s.name}</span>
+            </label>
+          ))}
+        </div>
+        <button
+          type="submit"
+          class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+        >
+          선택 소스 수집
+        </button>
+        <pre id="collect-result" class="mt-2 max-h-40 overflow-auto rounded bg-black/5 p-2 text-xs"></pre>
+      </form>
+    </section>
+
+    <section class="rounded-lg border border-border bg-surface-alt p-4">
+      <h2 class="mb-3 font-semibold">다이제스트 생성</h2>
+      <form id="digest-form" class="space-y-3">
+        <div class="flex gap-2">
+          <label class="flex items-center gap-2 text-sm">
+            <input type="radio" name="edition" value="am" />
+            AM
+          </label>
+          <label class="flex items-center gap-2 text-sm">
+            <input type="radio" name="edition" value="pm" checked />
+            PM
+          </label>
+        </div>
+        <button
+          type="submit"
+          class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+        >
+          다이제스트 생성
+        </button>
+        <pre id="digest-result" class="mt-2 max-h-40 overflow-auto rounded bg-black/5 p-2 text-xs"></pre>
+      </form>
+    </section>
+
+    <section class="rounded-lg border border-border bg-surface-alt p-4">
+      <h2 class="mb-3 font-semibold">최근 수집 로그</h2>
+      <div id="logs" class="space-y-1 text-sm text-text-secondary">
+        (현황 로드 시 표시)
+      </div>
+    </section>
+  </div>
+
+  <script>
+    async function loadStatus() {
+      try {
+        const res = await fetch('/api/admin/status');
+        const data = await res.json();
+        if (data.error) {
+          document.getElementById('status').innerHTML = `<p class="text-red-600">${data.error}</p>`;
+          return;
+        }
+        document.getElementById('status').innerHTML = `
+          <p>총 기사: <strong>${data.total_articles}</strong> | 미요약: <strong>${data.unsummarized}</strong> | 오늘 수집: <strong>${data.today_collected}</strong></p>
+          <p>OpenRouter 호출: <strong>${data.openrouter_calls_today}/50</strong></p>
+          <p>최근 다이제스트: <strong>${data.latest_digest ?? '-'}</strong></p>
+        `;
+        const logs = data.recent_collect_logs || [];
+        document.getElementById('logs').innerHTML = logs.length
+          ? logs.map((r) => `<p>${r.created_at?.slice(11, 19) ?? ''} ${r.source} +${r.collected_count} / dup ${r.duplicate_count}</p>`).join('')
+          : '<p>로그 없음</p>';
+      } catch (e) {
+        document.getElementById('status').innerHTML = `<p class="text-red-600">${e.message}</p>`;
+      }
+    }
+
+    document.getElementById('collect-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const checked = Array.from(form.querySelectorAll('input[name="source"]:checked')).map((el) => el.value);
+      const resultEl = document.getElementById('collect-result');
+      resultEl.textContent = '수집 중...';
+      try {
+        const res = await fetch('/api/admin/collect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(checked.length ? { sources: checked } : {}),
+        });
+        const data = await res.json();
+        resultEl.textContent = JSON.stringify(data, null, 2);
+        loadStatus();
+      } catch (err) {
+        resultEl.textContent = err.message;
+      }
+    });
+
+    document.getElementById('digest-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const edition = document.querySelector('input[name="edition"]:checked')?.value || 'pm';
+      const resultEl = document.getElementById('digest-result');
+      resultEl.textContent = '생성 중...';
+      try {
+        const res = await fetch('/api/admin/digest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ edition }),
+        });
+        const data = await res.json();
+        resultEl.textContent = JSON.stringify(data, null, 2);
+        loadStatus();
+      } catch (err) {
+        resultEl.textContent = err.message;
+      }
+    });
+
+    loadStatus();
+  </script>
+</BaseLayout>

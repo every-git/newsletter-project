@@ -34,6 +34,8 @@ argument-hint: "[선택사항: 특정 스킬 이름 또는 집중할 영역]"
 | `verify-frontend` | BaseLayout·API 경로·Preact client | `src/pages/**/*.astro`, `src/components/**` |
 | `verify-workers` | D1·KV·Cron·진입점·타입 경로 | `workers/collect/**`, `workers/digest/**` |
 | `verify-db` | 스키마·types·db.ts 일치 | `db/schema.sql`, `src/lib/types.ts`, `src/lib/db.ts` |
+| `verify-sources` | 뉴스 소스 config·VERIFICATION.md | `src/lib/sources/sources-config.ts`, `docs/VERIFICATION.md` |
+| `verify-openrouter-models` | OpenRouter MODELS·:free·VERIFICATION.md | `src/lib/llm/openrouter.ts`, `docs/VERIFICATION.md` |
 
 ## 워크플로우
 

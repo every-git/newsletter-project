@@ -1,0 +1,9 @@
+---
+description: 에이전트 터미널 안정화 및 대안 안내
+alwaysApply: true
+---
+
+# 터미널 실행 안정화
+
+- **에이전트 터미널이 실행되지 않거나 빙글빙글 돌 때**: 사용자에게 [docs/CURSOR_TERMINAL.md](docs/CURSOR_TERMINAL.md)를 안내한다. Cursor Settings → Cursor Settings → Agents → Auto-Run에서 **Auto-Run Mode**를 `Ask Every Time` 또는 `Run Everything`으로 바꾸고 재시작하도록 권한다.
+- **중요한 명령**(배포, git, gh, npm 스크립트 등)은 터미널 실행이 실패할 수 있음을 전제로, **복사해서 붙여넣을 수 있는 명령 블록**을 함께 제시한다. 사용자가 직접 터미널에서 실행한 뒤 결과를 알려주면 그에 맞춰 다음 단계를 진행한다.

@@ -1,4 +1,4 @@
-import type { SourceConfig } from '../../../src/lib/types';
+import type { SourceConfig } from '../types';
 
 export interface CollectedArticle {
   url: string;
@@ -27,10 +27,8 @@ function extractItems(xml: string): string[] {
 }
 
 function extractLink(itemXml: string): string {
-  // Atom: <link href="..."/>
   const atomLink = itemXml.match(/<link[^>]*href=["']([^"']+)["'][^>]*\/?>/i);
   if (atomLink) return atomLink[1];
-  // RSS: <link>...</link>
   return extractText(itemXml, 'link');
 }
 

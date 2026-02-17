@@ -13,6 +13,8 @@
 | **verify-frontend** | 페이지/레이아웃/컴포넌트(BaseLayout, API 경로, Preact client) 검증 |
 | **verify-workers** | collect·digest 워커(D1, KV, Cron, 진입점) 검증 |
 | **verify-db** | schema.sql·types.ts·db.ts 일관성 검증 |
+| **verify-sources** | 뉴스 소스 config·VERIFICATION.md·URL 검증 |
+| **verify-openrouter-models** | OpenRouter MODELS·:free·VERIFICATION.md 검증 |
 | **deploy-cloudflare** | D1/KV 생성, wrangler 반영, 스키마·시크릿, 배포 순서 안내 |
 
 ## 관리 방법
