@@ -1,0 +1,5 @@
+# 로컬 개발 시 wrangler dev / Astro dev 에서 사용하는 시크릿.
+# 이 파일을 복사해 .dev.vars 로 만들고 값을 채운 뒤 사용하세요.
+# .dev.vars 는 .gitignore 에 포함되어 커밋되지 않습니다.
+
+OPENROUTER_API_KEY=your-openrouter-api-key-here

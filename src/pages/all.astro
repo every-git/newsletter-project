@@ -1,0 +1,125 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+import { getArticlesWithBookmarks } from '../lib/db';
+
+const { env } = Astro.locals.runtime;
+const db = env.DB;
+
+const url = Astro.url;
+const feed = url.searchParams.get('feed') || undefined;
+const tag = url.searchParams.get('tag') || undefined;
+const search = url.searchParams.get('search') || undefined;
+const sort = (url.searchParams.get('sort') as 'latest' | 'score') || 'latest';
+const page = parseInt(url.searchParams.get('page') || '1');
+const limit = 30;
+const offset = (page - 1) * limit;
+
+const articles = await getArticlesWithBookmarks(db, {
+  feed_type: feed,
+  tag,
+  search,
+  sort,
+  limit: limit + 1,
+  offset,
+});
+
+const hasMore = articles.length > limit;
+const displayArticles = articles.slice(0, limit);
+
+const filters = [
+  { label: '전체', value: '', param: 'feed' },
+  { label: 'Tech', value: 'tech', param: 'feed' },
+  { label: 'World', value: 'world', param: 'feed' },
+];
+
+const buildUrl = (params: Record<string, string>) => {
+  const u = new URL(url);
+  for (const [k, v] of Object.entries(params)) {
+    if (v) u.searchParams.set(k, v);
+    else u.searchParams.delete(k);
+  }
+  u.searchParams.delete('page');
+  return u.pathname + u.search;
+};
+---
+
+<BaseLayout title="전체 기사 - Tech Digest">
+  <div class="space-y-4">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <h1 class="text-xl font-bold">전체 기사</h1>
+      <form method="get" class="flex gap-2">
+        <input
+          type="text"
+          name="search"
+          value={search || ''}
+          placeholder="검색..."
+          class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
+        />
+        {feed && <input type="hidden" name="feed" value={feed} />}
+        {sort !== 'latest' && <input type="hidden" name="sort" value={sort} />}
+        <button type="submit" class="rounded-lg bg-primary px-3 py-1.5 text-sm text-white">검색</button>
+      </form>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      {filters.map((f) => (
+        <a
+          href={buildUrl({ feed: f.value })}
+          class:list={[
+            'rounded-full px-3 py-1 text-sm font-medium transition-colors',
+            (feed || '') === f.value
+              ? 'bg-primary text-white'
+              : 'bg-surface-alt text-text-secondary hover:text-text',
+          ]}
+        >
+          {f.label}
+        </a>
+      ))}
+      <span class="text-text-secondary/30">|</span>
+      <a
+        href={buildUrl({ sort: 'latest' })}
+        class:list={['text-sm', sort === 'latest' ? 'font-semibold text-primary' : 'text-text-secondary hover:text-text']}
+      >
+        최신순
+      </a>
+      <a
+        href={buildUrl({ sort: 'score' })}
+        class:list={['text-sm', sort === 'score' ? 'font-semibold text-primary' : 'text-text-secondary hover:text-text']}
+      >
+        점수순
+      </a>
+    </div>
+
+    {displayArticles.length === 0 ? (
+      <div class="rounded-lg border border-border bg-surface-alt p-8 text-center">
+        <p class="text-text-secondary">표시할 기사가 없습니다.</p>
+      </div>
+    ) : (
+      <div class="space-y-2">
+        {displayArticles.map((article) => (
+          <ArticleCard article={article} variant="small" />
+        ))}
+      </div>
+    )}
+
+    <div class="flex justify-center gap-2 pt-4">
+      {page > 1 && (
+        <a
+          href={`?${new URLSearchParams({ ...(feed ? { feed } : {}), ...(sort !== 'latest' ? { sort } : {}), ...(search ? { search } : {}), page: String(page - 1) })}`}
+          class="rounded-lg border border-border px-4 py-2 text-sm hover:border-primary/30"
+        >
+          이전
+        </a>
+      )}
+      {hasMore && (
+        <a
+          href={`?${new URLSearchParams({ ...(feed ? { feed } : {}), ...(sort !== 'latest' ? { sort } : {}), ...(search ? { search } : {}), page: String(page + 1) })}`}
+          class="rounded-lg border border-border px-4 py-2 text-sm hover:border-primary/30"
+        >
+          다음
+        </a>
+      )}
+    </div>
+  </div>
+</BaseLayout>

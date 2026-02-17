@@ -1,0 +1,61 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+}
+
+const { title = 'Tech Digest' } = Astro.props;
+const currentPath = Astro.url.pathname;
+---
+
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="개인용 테크 뉴스 다이제스트" />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen bg-surface">
+    <nav class="sticky top-0 z-50 border-b border-border bg-surface/80 backdrop-blur-sm">
+      <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+        <a href="/" class="text-lg font-bold text-primary">Tech Digest</a>
+        <div class="flex gap-4 text-sm">
+          <a
+            href="/"
+            class:list={['hover:text-primary', currentPath === '/' ? 'font-semibold text-primary' : 'text-text-secondary']}
+          >
+            홈
+          </a>
+          <a
+            href="/all"
+            class:list={['hover:text-primary', currentPath === '/all' ? 'font-semibold text-primary' : 'text-text-secondary']}
+          >
+            전체 기사
+          </a>
+          <a
+            href="/bookmarks"
+            class:list={['hover:text-primary', currentPath === '/bookmarks' ? 'font-semibold text-primary' : 'text-text-secondary']}
+          >
+            북마크
+          </a>
+          <a
+            href="/manage"
+            class:list={['hover:text-primary', currentPath === '/manage' ? 'font-semibold text-primary' : 'text-text-secondary']}
+          >
+            관리
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="mx-auto max-w-5xl px-4 py-6">
+      <slot />
+    </main>
+
+    <footer class="border-t border-border py-6 text-center text-xs text-text-secondary">
+      Tech Digest &mdash; 개인용 테크 뉴스 다이제스트
+    </footer>
+  </body>
+</html>

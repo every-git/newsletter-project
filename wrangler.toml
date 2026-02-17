@@ -1,0 +1,20 @@
+name = "newsletter-project"
+main = "dist/_worker.js/index.js"
+compatibility_date = "2026-02-17"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+binding = "ASSETS"
+directory = "./dist"
+
+[observability]
+enabled = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "newsletter-db"
+database_id = "eaaf2356-2726-4318-901b-59d04c685171"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "10b61e0a07424d3a86b97ada828552f0"

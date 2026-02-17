@@ -1,0 +1,147 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TechHighlights from '../components/TechHighlights.astro';
+import WorldSummary from '../components/WorldSummary.astro';
+import EditionToggle from '../components/EditionToggle.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+import { getLatestDigest, getArticlesByIds, getRecentDigests } from '../lib/db';
+
+const { env } = Astro.locals.runtime;
+const db = env.DB;
+const kv = env.KV;
+
+// Try KV cache first, then DB
+let digest = null;
+const cached = await kv.get('digest-latest', 'json') as any;
+if (cached) {
+  digest = cached;
+} else {
+  digest = await getLatestDigest(db);
+}
+
+let techArticles: any[] = [];
+let worldArticles: any[] = [];
+let categories: Record<string, any[]> = {};
+let worldSummary = '';
+
+if (digest) {
+  const techIds: string[] = JSON.parse(digest.tech_top_ids || '[]');
+  const worldIds: string[] = JSON.parse(digest.world_top_ids || '[]');
+  const cats: Record<string, string[]> = JSON.parse(digest.categories || '{}');
+
+  techArticles = await getArticlesByIds(db, techIds);
+  worldArticles = await getArticlesByIds(db, worldIds);
+  worldSummary = digest.world_summary_ko || '';
+
+  for (const [cat, ids] of Object.entries(cats)) {
+    categories[cat] = await getArticlesByIds(db, ids);
+  }
+}
+
+const recentDigests = await getRecentDigests(db, 8);
+const displayDate = digest
+  ? new Date(digest.date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
+  : new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+const edition = digest?.edition || 'pm';
+const dateStr = digest?.date || new Date().toISOString().slice(0, 10);
+
+const catLabels: Record<string, string> = {
+  ai: 'AI/ML',
+  frontend: 'Web/Frontend',
+  backend: 'Backend',
+  infra: 'Infra',
+  startup: 'Startup',
+  security: 'Security',
+  mobile: 'Mobile',
+};
+---
+
+<BaseLayout title={`${displayDate} ${edition === 'am' ? '오전' : '오후'} 다이제스트 - Tech Digest`}>
+  <div class="space-y-8">
+    <!-- Header -->
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <h1 class="text-xl font-bold">
+        {displayDate} {edition === 'am' ? '오전' : '오후'} 다이제스트
+      </h1>
+      <EditionToggle currentEdition={edition as 'am' | 'pm'} date={dateStr} />
+    </div>
+
+    {!digest ? (
+      <div class="rounded-lg border border-border bg-surface-alt p-8 text-center">
+        <p class="text-text-secondary">아직 생성된 다이제스트가 없습니다.</p>
+        <p class="mt-2 text-sm text-text-secondary">수집 Worker가 실행되면 자동으로 생성됩니다.</p>
+      </div>
+    ) : (
+      <>
+        <TechHighlights articles={techArticles} />
+        <WorldSummary summary={worldSummary} articles={worldArticles} />
+
+        <!-- Category tabs -->
+        {Object.keys(categories).length > 0 && (
+          <section>
+            <h2 class="mb-4 text-lg font-bold text-text">카테고리별</h2>
+            <div class="space-y-4" id="category-section">
+              <div class="flex flex-wrap gap-2" id="category-tabs">
+                {Object.keys(categories).map((cat, i) => (
+                  <button
+                    data-cat={cat}
+                    class:list={[
+                      'category-tab rounded-full px-3 py-1 text-sm font-medium transition-colors',
+                      i === 0 ? 'bg-primary text-white' : 'bg-surface-alt text-text-secondary hover:text-text',
+                    ]}
+                  >
+                    {catLabels[cat] || cat}
+                  </button>
+                ))}
+              </div>
+              {Object.entries(categories).map(([cat, articles], i) => (
+                <div
+                  data-cat-content={cat}
+                  class:list={['category-content space-y-2', i !== 0 && 'hidden']}
+                >
+                  {articles.map((article) => (
+                    <ArticleCard article={article} variant="small" />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </>
+    )}
+
+    <!-- Recent digests -->
+    {recentDigests.length > 1 && (
+      <section>
+        <h2 class="mb-3 text-lg font-bold text-text">지난 다이제스트</h2>
+        <div class="flex flex-wrap gap-2">
+          {recentDigests.slice(1).map((d) => (
+            <a
+              href={`/archive/${d.id}`}
+              class="rounded-lg border border-border px-3 py-2 text-sm text-text-secondary hover:border-primary/30 hover:text-primary"
+            >
+              {new Date(d.date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
+              {d.edition === 'am' ? '오전' : '오후'}
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+  </div>
+
+  <script>
+    document.querySelectorAll('.category-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const cat = (tab as HTMLElement).dataset.cat;
+        document.querySelectorAll('.category-tab').forEach((t) => {
+          t.classList.remove('bg-primary', 'text-white');
+          t.classList.add('bg-surface-alt', 'text-text-secondary');
+        });
+        tab.classList.remove('bg-surface-alt', 'text-text-secondary');
+        tab.classList.add('bg-primary', 'text-white');
+        document.querySelectorAll('.category-content').forEach((c) => c.classList.add('hidden'));
+        document.querySelector(`[data-cat-content="${cat}"]`)?.classList.remove('hidden');
+      });
+    });
+  </script>
+</BaseLayout>

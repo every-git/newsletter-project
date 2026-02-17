@@ -1,0 +1,33 @@
+---
+interface Props {
+  currentEdition: 'am' | 'pm';
+  date: string;
+}
+
+const { currentEdition, date } = Astro.props;
+---
+
+<div class="flex items-center gap-2">
+  <a
+    href={`/archive/${date}-am`}
+    class:list={[
+      'rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
+      currentEdition === 'am'
+        ? 'bg-primary text-white'
+        : 'bg-surface-alt text-text-secondary hover:text-text',
+    ]}
+  >
+    오전 에디션
+  </a>
+  <a
+    href={`/archive/${date}-pm`}
+    class:list={[
+      'rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
+      currentEdition === 'pm'
+        ? 'bg-primary text-white'
+        : 'bg-surface-alt text-text-secondary hover:text-text',
+    ]}
+  >
+    오후 에디션
+  </a>
+</div>

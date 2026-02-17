@@ -1,0 +1,12 @@
+name = "newsletter-collect"
+main = "index.ts"
+compatibility_date = "2026-02-17"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "newsletter-db"
+database_id = "eaaf2356-2726-4318-901b-59d04c685171"
+
+[triggers]
+crons = ["0 * * * *"]

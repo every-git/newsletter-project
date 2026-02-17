@@ -1,0 +1,43 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import TechHighlights from '../../components/TechHighlights.astro';
+import WorldSummary from '../../components/WorldSummary.astro';
+import EditionToggle from '../../components/EditionToggle.astro';
+import { getDigestById, getArticlesByIds } from '../../lib/db';
+
+const { id } = Astro.params;
+const { env } = Astro.locals.runtime;
+const db = env.DB;
+
+if (!id) return Astro.redirect('/');
+
+const digest = await getDigestById(db, id);
+if (!digest) return Astro.redirect('/');
+
+const techIds: string[] = JSON.parse(digest.tech_top_ids || '[]');
+const worldIds: string[] = JSON.parse(digest.world_top_ids || '[]');
+
+const techArticles = await getArticlesByIds(db, techIds);
+const worldArticles = await getArticlesByIds(db, worldIds);
+
+const displayDate = new Date(digest.date).toLocaleDateString('ko-KR', {
+  year: 'numeric', month: 'long', day: 'numeric',
+});
+---
+
+<BaseLayout title={`${displayDate} ${digest.edition === 'am' ? '오전' : '오후'} 다이제스트 - Tech Digest`}>
+  <div class="space-y-8">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <a href="/" class="text-sm text-text-secondary hover:text-primary">&larr; 최신 다이제스트</a>
+        <h1 class="mt-1 text-xl font-bold">
+          {displayDate} {digest.edition === 'am' ? '오전' : '오후'} 다이제스트
+        </h1>
+      </div>
+      <EditionToggle currentEdition={digest.edition as 'am' | 'pm'} date={digest.date} />
+    </div>
+
+    <TechHighlights articles={techArticles} />
+    <WorldSummary summary={digest.world_summary_ko} articles={worldArticles} />
+  </div>
+</BaseLayout>

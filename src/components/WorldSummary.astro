@@ -1,0 +1,40 @@
+---
+import type { Article } from '../lib/types';
+
+interface Props {
+  summary: string;
+  articles?: Article[];
+}
+
+const { summary, articles = [] } = Astro.props;
+const lines = summary.split('\n').filter((l) => l.trim());
+---
+
+<section>
+  <h2 class="mb-4 text-lg font-bold text-text">세계정세 한눈에</h2>
+
+  <div class="rounded-lg border border-accent-world/20 bg-accent-world/5 p-5">
+    <ul class="space-y-2">
+      {lines.map((line) => (
+        <li class="flex gap-2 text-sm leading-relaxed text-text">
+          <span class="mt-0.5 shrink-0 text-accent-world">&bull;</span>
+          <span>{line.replace(/^[•\-]\s*/, '')}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+
+  {articles.length > 0 && (
+    <div class="mt-3 space-y-2">
+      {articles.map((article) => (
+        <a
+          href={`/article/${article.id}`}
+          class="flex items-center gap-2 rounded border border-border px-3 py-2 text-sm text-text hover:border-accent-world/30"
+        >
+          <span class="shrink-0 text-xs font-medium text-accent-world">{article.source.toUpperCase()}</span>
+          <span class="truncate">{article.title}</span>
+        </a>
+      ))}
+    </div>
+  )}
+</section>

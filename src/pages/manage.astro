@@ -1,0 +1,116 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getArticles } from '../lib/db';
+
+const { env } = Astro.locals.runtime;
+const db = env.DB;
+
+const url = Astro.url;
+const tab = url.searchParams.get('tab') || 'archived';
+
+const archivedArticles = tab === 'archived' ? await getArticles(db, { status: 'archived', limit: 50 }) : [];
+const deletedArticles = tab === 'deleted' ? await getArticles(db, { status: 'deleted', limit: 50 }) : [];
+const displayArticles = tab === 'archived' ? archivedArticles : deletedArticles;
+
+const sourceLabels: Record<string, string> = {
+  hackernews: 'HN', github: 'GitHub', techcrunch: 'TC', theverge: 'Verge',
+  geeknews: '긱뉴스', yozm: '요즘IT', reuters: 'Reuters', apnews: 'AP', bbc: 'BBC', yonhap: '연합',
+};
+---
+
+<BaseLayout title="기사 관리 - Tech Digest">
+  <div class="space-y-4">
+    <h1 class="text-xl font-bold">기사 관리</h1>
+
+    <div class="flex gap-2">
+      <a
+        href="/manage?tab=archived"
+        class:list={[
+          'rounded-full px-4 py-1.5 text-sm font-medium',
+          tab === 'archived' ? 'bg-primary text-white' : 'bg-surface-alt text-text-secondary',
+        ]}
+      >
+        아카이브 ({tab === 'archived' ? displayArticles.length : '...'})
+      </a>
+      <a
+        href="/manage?tab=deleted"
+        class:list={[
+          'rounded-full px-4 py-1.5 text-sm font-medium',
+          tab === 'deleted' ? 'bg-primary text-white' : 'bg-surface-alt text-text-secondary',
+        ]}
+      >
+        삭제됨 ({tab === 'deleted' ? displayArticles.length : '...'})
+      </a>
+    </div>
+
+    {displayArticles.length === 0 ? (
+      <div class="rounded-lg border border-border bg-surface-alt p-8 text-center">
+        <p class="text-text-secondary">
+          {tab === 'archived' ? '아카이브된 기사가 없습니다.' : '삭제된 기사가 없습니다.'}
+        </p>
+      </div>
+    ) : (
+      <div class="space-y-2">
+        {displayArticles.map((article) => (
+          <div class="flex items-center gap-3 rounded-lg border border-border p-3" data-article-row={article.id}>
+            <div class="min-w-0 flex-1">
+              <a href={`/article/${article.id}`} class="truncate text-sm font-medium hover:text-primary">
+                {article.title}
+              </a>
+              <div class="mt-1 flex gap-2 text-xs text-text-secondary">
+                <span>{sourceLabels[article.source] || article.source}</span>
+                <span>{new Date(article.published_at).toLocaleDateString('ko-KR')}</span>
+              </div>
+            </div>
+            <div class="flex shrink-0 gap-2">
+              <button
+                data-restore={article.id}
+                class="rounded border border-accent-world px-2 py-1 text-xs text-accent-world hover:bg-accent-world/10"
+              >
+                복구
+              </button>
+              {tab === 'archived' && (
+                <button
+                  data-delete={article.id}
+                  class="rounded border border-red-400 px-2 py-1 text-xs text-red-400 hover:bg-red-50"
+                >
+                  삭제
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+
+  <script>
+    document.querySelectorAll('[data-restore]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = (btn as HTMLElement).dataset.restore;
+        const res = await fetch(`/api/article/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'active' }),
+        });
+        if (res.ok) {
+          document.querySelector(`[data-article-row="${id}"]`)?.remove();
+        }
+      });
+    });
+
+    document.querySelectorAll('[data-delete]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = (btn as HTMLElement).dataset.delete;
+        const res = await fetch(`/api/article/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'deleted' }),
+        });
+        if (res.ok) {
+          document.querySelector(`[data-article-row="${id}"]`)?.remove();
+        }
+      });
+    });
+  </script>
+</BaseLayout>

@@ -1,0 +1,36 @@
+---
+import type { Article } from '../lib/types';
+import ArticleCard from './ArticleCard.astro';
+
+interface Props {
+  articles: Article[];
+}
+
+const { articles } = Astro.props;
+const top3 = articles.slice(0, 3);
+const rest = articles.slice(3, 7);
+---
+
+<section>
+  <h2 class="mb-4 text-lg font-bold text-text">테크 핵심 7</h2>
+
+  {articles.length === 0 ? (
+    <p class="text-sm text-text-secondary">아직 수집된 기사가 없습니다.</p>
+  ) : (
+    <>
+      <div class="mb-3 grid gap-3 sm:grid-cols-3">
+        {top3.map((article) => (
+          <ArticleCard article={article} variant="large" />
+        ))}
+      </div>
+
+      {rest.length > 0 && (
+        <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {rest.map((article) => (
+            <ArticleCard article={article} variant="small" />
+          ))}
+        </div>
+      )}
+    </>
+  )}
+</section>
