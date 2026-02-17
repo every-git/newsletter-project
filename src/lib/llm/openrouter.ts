@@ -12,10 +12,11 @@ interface OpenRouterResponse {
 }
 
 const MODELS = [
-  'deepseek/deepseek-chat-v3-0324:free',   // 685B MoE, 131K ctx, JSON 우수
-  'google/gemini-2.0-flash-exp:free',       // 1M ctx, 빠른 속도
-  'meta-llama/llama-4-maverick:free',       // 폴백
-  'qwen/qwq-32b:free',                     // 최종 폴백
+  'qwen/qwen3-next-80b-a3b-instruct:free', // 80B MoE, 262K ctx, JSON 지원, 무료
+  'google/gemma-3-27b-it:free',             // 27B, 131K ctx, JSON 지원, 무료
+  'upstage/solar-pro-3:free',               // 128K ctx, JSON 지원, 무료
+  'meta-llama/llama-3.3-70b-instruct:free', // 70B, 128K ctx, 무료 최종 폴백
+  'google/gemini-2.0-flash-001',            // $0.10/M, 1M ctx, JSON 지원, 한국어 우수, 유료 폴백
 ];
 
 const DEFAULT_DAILY_LIMIT = 50;
@@ -143,7 +144,15 @@ export async function callOpenRouter(
   }
 
   const data: OpenRouterResponse = await res.json();
-  return data.choices[0]?.message?.content || '';
+  const content = data.choices[0]?.message?.content || '';
+  if (!content.trim()) {
+    if (modelIndex < MODELS.length - 1) {
+      console.warn(`Model ${model} returned empty response, trying fallback...`);
+      return callOpenRouter(apiKey, messages, modelIndex + 1, kv);
+    }
+    throw new Error(`All models returned empty responses`);
+  }
+  return content;
 }
 
 export async function callOpenRouterWithChunking(

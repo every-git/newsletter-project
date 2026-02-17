@@ -13,4 +13,4 @@ binding = "KV"
 id = "10b61e0a07424d3a86b97ada828552f0"
 
 [triggers]
-crons = ["0 19 * * *", "0 7 * * *"]
+crons = ["0 19 * * *"]

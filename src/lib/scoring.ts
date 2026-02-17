@@ -32,7 +32,7 @@ export function calculateFinalScore(
 ): number {
   const commNorm = normalizeCommScore(source, scoreCommunity);
   const feedWeight = FEED_WEIGHTS[feedType] || 0.5;
-  const base = commNorm * feedWeight * (1 + scoreLlm / 200);
+  const base = (commNorm * 0.3 + scoreLlm / 100 * 0.7) * feedWeight;
 
   const hoursAgo = (Date.now() - new Date(publishedAt).getTime()) / (1000 * 60 * 60);
   let timeFactor = 1.0;

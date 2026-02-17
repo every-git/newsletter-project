@@ -44,14 +44,17 @@ const pubDate = new Date(article.published_at).toLocaleDateString('ko-KR', {
 });
 ---
 
-<BaseLayout title={`${article.title} - Tech Digest`}>
+<BaseLayout title={`${article.title_ko || article.title} - Tech Digest`}>
   <article class="space-y-6">
     <div>
       <a href="/" class="text-sm text-text-secondary hover:text-primary">&larr; 돌아가기</a>
     </div>
 
     <header class="space-y-3">
-      <h1 class="text-2xl font-bold leading-tight">{article.title}</h1>
+      <h1 class="text-2xl font-bold leading-tight">{article.title_ko || article.title}</h1>
+      {article.title_ko && (
+        <p class="text-sm text-text-secondary">{article.title}</p>
+      )}
       <div class="flex flex-wrap items-center gap-3 text-sm text-text-secondary">
         <span class="font-medium">{sourceLabels[article.source] || article.source}</span>
         <span>&middot;</span>
@@ -125,7 +128,7 @@ const pubDate = new Date(article.published_at).toLocaleDateString('ko-KR', {
               href={`/article/${r.id}`}
               class="flex items-center gap-2 rounded-lg border border-border p-3 text-sm hover:border-primary/30"
             >
-              <span class="truncate font-medium">{r.title}</span>
+              <span class="truncate font-medium">{r.title_ko || r.title}</span>
               <span class="shrink-0 text-xs text-text-secondary">{sourceLabels[r.source] || r.source}</span>
             </a>
           ))}

@@ -29,9 +29,11 @@
 
 | 순서 | 모델 ID | 상태 | 비고 |
 |------|---------|------|------|
-| 1 | `deepseek/deepseek-chat-v3-0324:free` | 사용 가능·무료 | OpenRouter Free 컬렉션에 등재 |
-| 2 | `google/gemini-2.5-flash:free` | 사용 가능 권장 | `gemini-2.5-flash-preview`는 미제공. 안정 버전 `gemini-2.5-flash` + `:free` 사용 |
-| 3 | `meta-llama/llama-4-maverick:free` | 사용 가능 | Llama 4 Maverick 존재. `:free` 적용 시 무료 tier 사용 (제한 있음) |
+| 1 | `qwen/qwen3-next-80b-a3b-instruct:free` | 사용 가능·무료 | 80B MoE, 262K ctx, JSON response_format 지원 |
+| 2 | `google/gemma-3-27b-it:free` | 사용 가능·무료 | 27B, 131K ctx, JSON response_format 지원 |
+| 3 | `upstage/solar-pro-3:free` | 사용 가능·무료 | 128K ctx, JSON response_format 지원 |
+| 4 | `meta-llama/llama-3.3-70b-instruct:free` | 사용 가능·무료 | 70B, 128K ctx, 무료 최종 폴백 |
+| 5 | `google/gemini-2.0-flash-001` | 사용 가능·유료 | $0.10/M, 1M ctx, JSON 지원, 한국어 우수, 유료 폴백 |
 
 - **`:free` 접미사:** OpenRouter에서 무료 variant 사용. 요청/일 제한 있음.
 - **검증 방법:** [OpenRouter Free Models](https://openrouter.ai/collections/free-models), [OpenRouter Models](https://openrouter.ai/models)에서 모델 ID 및 pricing 확인. 모델 추가/폐지 시 `src/lib/llm/openrouter.ts`의 `MODELS` 배열 수정.

@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS articles (
   feed_type TEXT NOT NULL,
   status TEXT DEFAULT 'active',
   tags TEXT DEFAULT '[]',
+  title_ko TEXT,
   summary_ko TEXT,
   insight_ko TEXT,
   score_community INTEGER DEFAULT 0,

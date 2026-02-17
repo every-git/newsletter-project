@@ -32,7 +32,7 @@ const lines = summary.split('\n').filter((l) => l.trim());
           class="flex items-center gap-2 rounded border border-border px-3 py-2 text-sm text-text hover:border-accent-world/30"
         >
           <span class="shrink-0 text-xs font-medium text-accent-world">{article.source.toUpperCase()}</span>
-          <span class="truncate">{article.title}</span>
+          <span class="truncate">{article.title_ko || article.title}</span>
         </a>
       ))}
     </div>

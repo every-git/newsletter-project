@@ -15,10 +15,15 @@ export interface DigestArticle {
 
 function parseJsonResponse(text: string): any {
   let cleaned = text.trim();
+  if (!cleaned) throw new Error('LLM returned empty response');
   if (cleaned.startsWith('```')) {
     cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
   }
-  return JSON.parse(cleaned);
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    throw new Error(`Invalid JSON from LLM: ${cleaned.slice(0, 200)}`);
+  }
 }
 
 function sleep(ms: number): Promise<void> {
@@ -88,9 +93,10 @@ export async function processTechArticles(
 
         await db
           .prepare(
-            `UPDATE articles SET summary_ko = ?, insight_ko = ?, tags = ?, score_llm = ?, score_final = ? WHERE id = ?`
+            `UPDATE articles SET title_ko = ?, summary_ko = ?, insight_ko = ?, tags = ?, score_llm = ?, score_final = ? WHERE id = ?`
           )
           .bind(
+            result.title_ko || null,
             result.summary_ko || null,
             result.insight_ko || null,
             JSON.stringify(result.tags || []),
@@ -164,9 +170,9 @@ export async function processWorldArticles(
 
       await db
         .prepare(
-          `UPDATE articles SET summary_ko = ?, score_llm = ?, score_final = ?, tags = '["world"]' WHERE id = ?`
+          `UPDATE articles SET title_ko = ?, summary_ko = ?, score_llm = ?, score_final = ?, tags = '["world"]' WHERE id = ?`
         )
-        .bind(articleResult.summary_ko || null, scoreLlm, scoreFinal, articleResult.id)
+        .bind(articleResult.title_ko || null, articleResult.summary_ko || null, scoreLlm, scoreFinal, articleResult.id)
         .run();
     }
   }
@@ -186,14 +192,14 @@ export async function createDigest(
 
   const techArticles = await db
     .prepare(
-      `SELECT * FROM articles WHERE feed_type = 'tech' AND status = 'active' AND summary_ko IS NOT NULL
+      `SELECT * FROM articles WHERE feed_type = 'tech' AND status = 'active' AND summary_ko IS NOT NULL AND score_final >= 0.3
        ORDER BY score_final DESC LIMIT 7`
     )
     .all<DigestArticle>();
 
   const worldArticles = await db
     .prepare(
-      `SELECT * FROM articles WHERE feed_type = 'world' AND status = 'active' AND summary_ko IS NOT NULL
+      `SELECT * FROM articles WHERE feed_type = 'world' AND status = 'active' AND summary_ko IS NOT NULL AND score_final >= 0.2
        ORDER BY score_final DESC LIMIT 3`
     )
     .all<DigestArticle>();

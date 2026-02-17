@@ -22,6 +22,18 @@ const sourceLabels: Record<string, string> = {
   <div class="space-y-4">
     <h1 class="text-xl font-bold">기사 관리</h1>
 
+    <div class="rounded-lg border border-border bg-surface-alt p-3">
+      <p class="mb-2 text-sm text-text-secondary">북마크하지 않은 7일 이전 기사를 DB에서 삭제합니다.</p>
+      <button
+        id="cleanup-old-btn"
+        type="button"
+        class="rounded border border-amber-500 px-3 py-1.5 text-sm text-amber-600 hover:bg-amber-500/10"
+      >
+        7일 이전 기사 정리 (북마크 제외)
+      </button>
+      <span id="cleanup-result" class="ml-2 text-sm text-text-secondary"></span>
+    </div>
+
     <div class="flex gap-2">
       <a
         href="/manage?tab=archived"
@@ -55,7 +67,7 @@ const sourceLabels: Record<string, string> = {
           <div class="flex items-center gap-3 rounded-lg border border-border p-3" data-article-row={article.id}>
             <div class="min-w-0 flex-1">
               <a href={`/article/${article.id}`} class="truncate text-sm font-medium hover:text-primary">
-                {article.title}
+                {article.title_ko || article.title}
               </a>
               <div class="mt-1 flex gap-2 text-xs text-text-secondary">
                 <span>{sourceLabels[article.source] || article.source}</span>
@@ -111,6 +123,31 @@ const sourceLabels: Record<string, string> = {
           document.querySelector(`[data-article-row="${id}"]`)?.remove();
         }
       });
+    });
+
+    const cleanupBtn = document.getElementById('cleanup-old-btn');
+    const cleanupResult = document.getElementById('cleanup-result');
+    cleanupBtn?.addEventListener('click', async () => {
+      cleanupResult!.textContent = '처리 중…';
+      (cleanupBtn as HTMLButtonElement).disabled = true;
+      try {
+        const res = await fetch('/api/admin/cleanup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ older_than_days: 7 }),
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          cleanupResult!.textContent = `${data.deleted}건 삭제됨`;
+          setTimeout(() => { cleanupResult!.textContent = ''; }, 3000);
+        } else {
+          cleanupResult!.textContent = data.error || '실패';
+        }
+      } catch {
+        cleanupResult!.textContent = '요청 실패';
+      } finally {
+        (cleanupBtn as HTMLButtonElement).disabled = false;
+      }
     });
   </script>
 </BaseLayout>

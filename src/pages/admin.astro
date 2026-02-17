@@ -17,6 +17,39 @@ const collectSources = SOURCES.filter((s) => s.type !== 'scrape');
     </section>
 
     <section class="rounded-lg border border-border bg-surface-alt p-4">
+      <h2 class="mb-3 font-semibold">소스별 기사 수</h2>
+      <div id="source-stats" class="text-sm text-text-secondary">
+        (현황 로드 시 표시)
+      </div>
+    </section>
+
+    <section class="rounded-lg border border-border bg-surface-alt p-4">
+      <h2 class="mb-3 font-semibold">설정</h2>
+      <form id="settings-form" class="space-y-3">
+        <div class="flex items-center gap-3">
+          <label class="text-sm">OpenRouter 일일 한도:</label>
+          <input
+            type="number"
+            id="daily-limit-input"
+            min="1"
+            max="10000"
+            value="50"
+            class="w-24 rounded border border-border bg-white px-2 py-1 text-sm"
+          />
+          <button
+            type="submit"
+            id="settings-btn"
+            class="rounded bg-primary px-3 py-1 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+          >
+            저장
+          </button>
+          <span id="settings-msg" class="text-xs text-text-secondary"></span>
+        </div>
+        <p class="text-xs text-text-secondary">무료 티어: 50 req/일, $0.50 이상 충전 시 1000 req/일</p>
+      </form>
+    </section>
+
+    <section class="rounded-lg border border-border bg-surface-alt p-4">
       <h2 class="mb-3 font-semibold">수집</h2>
       <form id="collect-form" class="space-y-3">
         <div class="flex flex-wrap gap-3">
@@ -29,7 +62,8 @@ const collectSources = SOURCES.filter((s) => s.type !== 'scrape');
         </div>
         <button
           type="submit"
-          class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          id="collect-btn"
+          class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
         >
           선택 소스 수집
         </button>
@@ -40,19 +74,26 @@ const collectSources = SOURCES.filter((s) => s.type !== 'scrape');
     <section class="rounded-lg border border-border bg-surface-alt p-4">
       <h2 class="mb-3 font-semibold">다이제스트 생성</h2>
       <form id="digest-form" class="space-y-3">
-        <div class="flex gap-2">
+        <div class="flex gap-4">
+          <div class="flex gap-2">
+            <label class="flex items-center gap-2 text-sm">
+              <input type="radio" name="edition" value="am" />
+              AM
+            </label>
+            <label class="flex items-center gap-2 text-sm">
+              <input type="radio" name="edition" value="pm" checked />
+              PM
+            </label>
+          </div>
           <label class="flex items-center gap-2 text-sm">
-            <input type="radio" name="edition" value="am" />
-            AM
-          </label>
-          <label class="flex items-center gap-2 text-sm">
-            <input type="radio" name="edition" value="pm" checked />
-            PM
+            <input type="checkbox" id="skip-llm" />
+            <span>LLM 스킵 (이미 요약된 기사로만 다이제스트 생성)</span>
           </label>
         </div>
         <button
           type="submit"
-          class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          id="digest-btn"
+          class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
         >
           다이제스트 생성
         </button>
@@ -69,6 +110,16 @@ const collectSources = SOURCES.filter((s) => s.type !== 'scrape');
   </div>
 
   <script>
+    function setButtonLoading(btn, loading, text) {
+      btn.disabled = loading;
+      btn.textContent = loading ? text : btn.dataset.originalText;
+    }
+
+    // 버튼 원래 텍스트 저장
+    document.querySelectorAll('button[type="submit"]').forEach((btn) => {
+      btn.dataset.originalText = btn.textContent.trim();
+    });
+
     async function loadStatus() {
       try {
         const res = await fetch('/api/admin/status');
@@ -77,11 +128,23 @@ const collectSources = SOURCES.filter((s) => s.type !== 'scrape');
           document.getElementById('status').innerHTML = `<p class="text-red-600">${data.error}</p>`;
           return;
         }
+        const limit = data.openrouter_daily_limit ?? 50;
         document.getElementById('status').innerHTML = `
           <p>총 기사: <strong>${data.total_articles}</strong> | 미요약: <strong>${data.unsummarized}</strong> | 오늘 수집: <strong>${data.today_collected}</strong></p>
-          <p>OpenRouter 호출: <strong>${data.openrouter_calls_today}/50</strong></p>
+          <p>OpenRouter 호출: <strong>${data.openrouter_calls_today}/${limit}</strong></p>
           <p>최근 다이제스트: <strong>${data.latest_digest ?? '-'}</strong></p>
         `;
+
+        // 한도 입력 필드 업데이트
+        document.getElementById('daily-limit-input').value = limit;
+
+        // 소스별 기사 수
+        const sources = data.articles_by_source || [];
+        document.getElementById('source-stats').innerHTML = sources.length
+          ? sources.map((s) => `<span class="inline-block mr-3"><strong>${s.source}</strong>: ${s.count}</span>`).join('')
+          : '<p>데이터 없음</p>';
+
+        // 로그
         const logs = data.recent_collect_logs || [];
         document.getElementById('logs').innerHTML = logs.length
           ? logs.map((r) => `<p>${r.created_at?.slice(11, 19) ?? ''} ${r.source} +${r.collected_count} / dup ${r.duplicate_count}</p>`).join('')
@@ -91,11 +154,44 @@ const collectSources = SOURCES.filter((s) => s.type !== 'scrape');
       }
     }
 
+    // 설정 저장
+    document.getElementById('settings-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('settings-btn');
+      const msgEl = document.getElementById('settings-msg');
+      const limitVal = parseInt(document.getElementById('daily-limit-input').value, 10);
+
+      setButtonLoading(btn, true, '저장 중...');
+      msgEl.textContent = '';
+      try {
+        const res = await fetch('/api/admin/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ openrouter_daily_limit: limitVal }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          msgEl.textContent = '저장 완료';
+          loadStatus();
+        } else {
+          msgEl.textContent = data.error || '저장 실패';
+        }
+      } catch (err) {
+        msgEl.textContent = err.message;
+      } finally {
+        setButtonLoading(btn, false);
+      }
+    });
+
+    // 수집
     document.getElementById('collect-form').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const btn = document.getElementById('collect-btn');
       const form = e.target;
       const checked = Array.from(form.querySelectorAll('input[name="source"]:checked')).map((el) => el.value);
       const resultEl = document.getElementById('collect-result');
+
+      setButtonLoading(btn, true, '수집 중...');
       resultEl.textContent = '수집 중...';
       try {
         const res = await fetch('/api/admin/collect', {
@@ -108,25 +204,34 @@ const collectSources = SOURCES.filter((s) => s.type !== 'scrape');
         loadStatus();
       } catch (err) {
         resultEl.textContent = err.message;
+      } finally {
+        setButtonLoading(btn, false);
       }
     });
 
+    // 다이제스트 생성
     document.getElementById('digest-form').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const btn = document.getElementById('digest-btn');
       const edition = document.querySelector('input[name="edition"]:checked')?.value || 'pm';
+      const skipLlm = document.getElementById('skip-llm').checked;
       const resultEl = document.getElementById('digest-result');
+
+      setButtonLoading(btn, true, '생성 중...');
       resultEl.textContent = '생성 중...';
       try {
         const res = await fetch('/api/admin/digest', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ edition }),
+          body: JSON.stringify({ edition, skip_llm: skipLlm }),
         });
         const data = await res.json();
         resultEl.textContent = JSON.stringify(data, null, 2);
         loadStatus();
       } catch (err) {
         resultEl.textContent = err.message;
+      } finally {
+        setButtonLoading(btn, false);
       }
     });
 

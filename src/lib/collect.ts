@@ -4,6 +4,24 @@ import { SOURCES } from './sources/sources-config';
 
 type D1Database = import('@cloudflare/workers-types').D1Database;
 
+const EXCLUDE_TECH_EN =
+  /\b(nfl|nba|mlb|fifa|soccer|basketball|football|baseball|cricket|tennis|golf|olympics|super\s*bowl|kardashian|celebrity|gossip|reality\s*tv|movie\s*review|box\s*office|grammy|oscar|emmy|red\s*carpet)\b/i;
+
+const EXCLUDE_WORLD_EN =
+  /\b(premier\s*league|champions\s*league|world\s*cup|transfer|match\s*report|goal\s*scored|k-?pop|idol|drama\s*review|entertainment|billboard|grammy)\b/i;
+
+const EXCLUDE_KO =
+  /연예|아이돌|드라마|예능|스포츠|축구|야구|농구|배구|골프|올림픽|프로야구|K리그|해외축구/;
+
+export function isRelevantArticle(title: string, feedType: string): boolean {
+  if (EXCLUDE_KO.test(title)) return false;
+  if (feedType === 'tech' && EXCLUDE_TECH_EN.test(title)) return false;
+  if (feedType === 'world' && EXCLUDE_WORLD_EN.test(title)) return false;
+  return true;
+}
+
+const MAX_AGE_MS = 48 * 60 * 60 * 1000;
+
 export async function hashUrl(url: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(url);
@@ -32,6 +50,16 @@ export async function insertArticles(
   let duplicates = 0;
 
   for (const article of articles) {
+    // 48시간 이전 기사 제외
+    if (article.published_at && Date.now() - new Date(article.published_at).getTime() > MAX_AGE_MS) {
+      continue;
+    }
+
+    // 제목 키워드 필터
+    if (!isRelevantArticle(article.title, article.feed_type)) {
+      continue;
+    }
+
     const urlHash = await hashUrl(article.url);
 
     const existing = await db

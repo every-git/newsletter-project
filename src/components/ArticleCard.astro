@@ -58,7 +58,7 @@ const timeAgo = (dateStr: string) => {
         variant === 'large' ? 'text-base' : 'text-sm',
       ]}
     >
-      {article.title}
+      {article.title_ko || article.title}
     </a>
     {article.score_final > 0 && (
       <span class="shrink-0 text-xs font-medium text-text-secondary">
@@ -67,8 +67,11 @@ const timeAgo = (dateStr: string) => {
     )}
   </div>
 
-  {variant === 'large' && article.summary_ko && (
-    <p class="text-sm leading-relaxed text-text-secondary">
+  {article.summary_ko && (
+    <p class:list={[
+      'text-sm leading-relaxed text-text-secondary',
+      variant === 'small' && 'line-clamp-1',
+    ]}>
       {article.summary_ko}
     </p>
   )}
@@ -97,6 +100,22 @@ const timeAgo = (dateStr: string) => {
       >
         &#9734;
       </button>
+      <button
+        data-action="archive"
+        data-article-id={article.id}
+        class="text-xs text-text-secondary hover:text-primary"
+        title="아카이브"
+      >
+        &#128230;
+      </button>
+      <button
+        data-action="delete"
+        data-article-id={article.id}
+        class="text-xs text-text-secondary hover:text-red-500"
+        title="삭제"
+      >
+        &#128465;
+      </button>
       <a
         href={article.url}
         target="_blank"
@@ -109,3 +128,59 @@ const timeAgo = (dateStr: string) => {
     </div>
   )}
 </article>
+
+<script>
+  document.addEventListener('click', async (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-action]');
+    if (!btn) return;
+
+    const action = btn.dataset.action;
+    const articleId = btn.dataset.articleId;
+    if (!articleId) return;
+
+    const card = btn.closest('article');
+
+    try {
+      if (action === 'bookmark') {
+        const res = await fetch('/api/bookmark', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ article_id: articleId }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          btn.innerHTML = data.is_bookmarked ? '&#9733;' : '&#9734;';
+        }
+      } else if (action === 'archive') {
+        const res = await fetch(`/api/article/${articleId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'archived' }),
+        });
+        const data = await res.json();
+        if (data.ok && card) {
+          card.style.transition = 'opacity 0.3s, transform 0.3s';
+          card.style.opacity = '0';
+          card.style.transform = 'translateX(-20px)';
+          setTimeout(() => card.remove(), 300);
+        }
+      } else if (action === 'delete') {
+        if (!confirm('이 기사를 삭제하시겠습니까?')) return;
+        const res = await fetch(`/api/article/${articleId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'deleted' }),
+        });
+        const data = await res.json();
+        if (data.ok && card) {
+          card.style.transition = 'opacity 0.3s, transform 0.3s';
+          card.style.opacity = '0';
+          card.style.transform = 'translateX(-20px)';
+          setTimeout(() => card.remove(), 300);
+        }
+      }
+    } catch (err) {
+      console.error(`Action "${action}" failed:`, err);
+    }
+  });
+</script>

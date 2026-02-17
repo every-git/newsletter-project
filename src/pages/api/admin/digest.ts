@@ -59,6 +59,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         .prepare(
           `SELECT id, title, source, url, feed_type, score_community, published_at
            FROM articles WHERE feed_type = 'tech' AND status = 'active' AND summary_ko IS NULL
+           AND collected_at > datetime('now', '-48 hours')
            ORDER BY score_community DESC LIMIT 25`
         )
         .all<ArticleRow>();
@@ -67,6 +68,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         .prepare(
           `SELECT id, title, source, url, feed_type, score_community, published_at
            FROM articles WHERE feed_type = 'world' AND status = 'active' AND summary_ko IS NULL
+           AND collected_at > datetime('now', '-48 hours')
            ORDER BY collected_at DESC LIMIT 15`
         )
         .all<ArticleRow>();

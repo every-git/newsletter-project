@@ -13,6 +13,7 @@ export interface Article {
   feed_type: FeedType;
   status: ArticleStatus;
   tags: string; // JSON array string
+  title_ko: string | null;
   summary_ko: string | null;
   insight_ko: string | null;
   score_community: number;

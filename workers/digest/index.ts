@@ -82,20 +82,24 @@ export default {
 
       const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
 
+      const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+
       const techArticles = await db
         .prepare(
           `SELECT id, title, source, url, feed_type, score_community, published_at
-           FROM articles WHERE feed_type = 'tech' AND status = 'active' AND summary_ko IS NULL
+           FROM articles WHERE feed_type = 'tech' AND status = 'active' AND summary_ko IS NULL AND collected_at > ?
            ORDER BY score_community DESC LIMIT 25`
         )
+        .bind(fortyEightHoursAgo)
         .all<ArticleRow>();
 
       const worldArticles = await db
         .prepare(
           `SELECT id, title, source, url, feed_type, score_community, published_at
-           FROM articles WHERE feed_type = 'world' AND status = 'active' AND summary_ko IS NULL
+           FROM articles WHERE feed_type = 'world' AND status = 'active' AND summary_ko IS NULL AND collected_at > ?
            ORDER BY collected_at DESC LIMIT 15`
         )
+        .bind(fortyEightHoursAgo)
         .all<ArticleRow>();
 
       const results: Record<string, unknown> = {

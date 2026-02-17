@@ -33,7 +33,7 @@ export async function fetchHackerNews(limit = 30): Promise<CollectedArticle[]> {
   );
 
   return items
-    .filter((item): item is HNItem => !!item && !!item.url && item.type === 'story')
+    .filter((item): item is HNItem => !!item && !!item.url && item.type === 'story' && item.score >= 10)
     .map((item) => ({
       url: item.url!,
       title: item.title,
