@@ -27,10 +27,20 @@ const articles = await getArticlesWithBookmarks(db, {
 const hasMore = articles.length > limit;
 const displayArticles = articles.slice(0, limit);
 
-const filters = [
-  { label: '전체', value: '', param: 'feed' },
-  { label: 'Tech', value: 'tech', param: 'feed' },
-  { label: 'World', value: 'world', param: 'feed' },
+const feedFilters = [
+  { label: '전체', value: '' },
+  { label: 'Tech', value: 'tech' },
+  { label: 'World', value: 'world' },
+];
+
+const tagFilters = [
+  { label: 'AI', value: 'ai' },
+  { label: 'Frontend', value: 'frontend' },
+  { label: 'Backend', value: 'backend' },
+  { label: 'Infra', value: 'infra' },
+  { label: 'Security', value: 'security' },
+  { label: 'Mobile', value: 'mobile' },
+  { label: 'Startup', value: 'startup' },
 ];
 
 const buildUrl = (params: Record<string, string>) => {
@@ -63,17 +73,31 @@ const buildUrl = (params: Record<string, string>) => {
     </div>
 
     <div class="flex flex-wrap items-center gap-2">
-      {filters.map((f) => (
+      {feedFilters.map((f) => (
         <a
-          href={buildUrl({ feed: f.value })}
+          href={buildUrl({ feed: f.value, tag: '' })}
           class:list={[
             'rounded-full px-3 py-1 text-sm font-medium transition-colors',
-            (feed || '') === f.value
+            (feed || '') === f.value && !tag
               ? 'bg-primary text-white'
               : 'bg-surface-alt text-text-secondary hover:text-text',
           ]}
         >
           {f.label}
+        </a>
+      ))}
+      <span class="text-text-secondary/30">|</span>
+      {tagFilters.map((t) => (
+        <a
+          href={buildUrl({ tag: tag === t.value ? '' : t.value, feed: '' })}
+          class:list={[
+            'rounded-full px-3 py-1 text-sm font-medium transition-colors',
+            tag === t.value
+              ? 'bg-primary text-white'
+              : 'bg-surface-alt text-text-secondary hover:text-text',
+          ]}
+        >
+          {t.label}
         </a>
       ))}
       <span class="text-text-secondary/30">|</span>
@@ -106,7 +130,7 @@ const buildUrl = (params: Record<string, string>) => {
     <div class="flex justify-center gap-2 pt-4">
       {page > 1 && (
         <a
-          href={`?${new URLSearchParams({ ...(feed ? { feed } : {}), ...(sort !== 'latest' ? { sort } : {}), ...(search ? { search } : {}), page: String(page - 1) })}`}
+          href={`?${new URLSearchParams({ ...(feed ? { feed } : {}), ...(tag ? { tag } : {}), ...(sort !== 'latest' ? { sort } : {}), ...(search ? { search } : {}), page: String(page - 1) })}`}
           class="rounded-lg border border-border px-4 py-2 text-sm hover:border-primary/30"
         >
           이전
@@ -114,7 +138,7 @@ const buildUrl = (params: Record<string, string>) => {
       )}
       {hasMore && (
         <a
-          href={`?${new URLSearchParams({ ...(feed ? { feed } : {}), ...(sort !== 'latest' ? { sort } : {}), ...(search ? { search } : {}), page: String(page + 1) })}`}
+          href={`?${new URLSearchParams({ ...(feed ? { feed } : {}), ...(tag ? { tag } : {}), ...(sort !== 'latest' ? { sort } : {}), ...(search ? { search } : {}), page: String(page + 1) })}`}
           class="rounded-lg border border-border px-4 py-2 text-sm hover:border-primary/30"
         >
           다음

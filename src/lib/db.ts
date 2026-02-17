@@ -168,6 +168,26 @@ export async function getRecentDigests(db: D1Database, limit = 10): Promise<Dige
   return result.results;
 }
 
+const OLD_ARTICLES_EXCEPT_BOOKMARKED_SQL = `published_at < ? AND id NOT IN (SELECT article_id FROM bookmarks)`;
+
+/**
+ * 7일 이전 기사 중 북마크되지 않은 기사 수를 조회합니다 (삭제하지 않음).
+ * @param db D1 DB
+ * @param olderThanDays 이 값일보다 오래된 기사가 대상 (기본 7)
+ * @returns 삭제 대상 기사 수
+ */
+export async function countOldArticlesExceptBookmarked(
+  db: D1Database,
+  olderThanDays = 7
+): Promise<number> {
+  const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000).toISOString();
+  const row = await db
+    .prepare(`SELECT COUNT(*) as cnt FROM articles WHERE ${OLD_ARTICLES_EXCEPT_BOOKMARKED_SQL}`)
+    .bind(cutoff)
+    .first<{ cnt: number }>();
+  return row?.cnt ?? 0;
+}
+
 /**
  * 7일 이전 기사 중 북마크되지 않은 기사만 DB에서 삭제합니다.
  * @param db D1 DB
@@ -180,9 +200,7 @@ export async function deleteOldArticlesExceptBookmarked(
 ): Promise<number> {
   const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000).toISOString();
   const result = await db
-    .prepare(
-      `DELETE FROM articles WHERE published_at < ? AND id NOT IN (SELECT article_id FROM bookmarks)`
-    )
+    .prepare(`DELETE FROM articles WHERE ${OLD_ARTICLES_EXCEPT_BOOKMARKED_SQL}`)
     .bind(cutoff)
     .run();
   return result.meta.changes ?? 0;
