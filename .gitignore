@@ -21,8 +21,14 @@ pnpm-debug.log*
 .env.production
 .dev.vars
 
+# Cursor/Claude project rules (local only)
+CLAUDE.md
+
 # macOS-specific files
 .DS_Store
 
 # jetbrains setting folder
 .idea/
+
+# Cursor/Claude project rules (local only)
+CLAUDE.md
