@@ -165,7 +165,6 @@ const timeAgo = (dateStr: string) => {
           setTimeout(() => card.remove(), 300);
         }
       } else if (action === 'delete') {
-        if (!confirm('이 기사를 삭제하시겠습니까?')) return;
         const res = await fetch(`/api/article/${articleId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },

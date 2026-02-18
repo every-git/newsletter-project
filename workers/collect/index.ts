@@ -1,4 +1,5 @@
 import { runCollect, SOURCES } from '../../src/lib/collect';
+import { deleteOldArticlesExceptBookmarked } from '../../src/lib/db';
 import {
   createDigest,
   processTechArticles,
@@ -52,6 +53,16 @@ export default {
         console.log(`[${id}] Collected: ${r.inserted}, Duplicates: ${r.duplicates}`);
       } else {
         console.error(`[${id}] Error:`, r.error);
+      }
+    }
+
+    // --- 1.5) 오래된 뉴스 제거 (하루 1회, UTC 0시) ---
+    if (hour === 0) {
+      try {
+        const deleted = await deleteOldArticlesExceptBookmarked(db, 7);
+        if (deleted > 0) console.log(`[cleanup] Old articles removed: ${deleted}`);
+      } catch (e: any) {
+        console.error('[cleanup] Failed:', e.message);
       }
     }
 
